@@ -22,20 +22,34 @@ namespace Server
             Socket listen = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             listen.Bind(ipServer);
             listen.Listen(10);
-            Task.Run(() => MainTask(listen));
+            
+           
+            
+            
+            
+            //Task.Run(() => MainTask(listen));
             
             string flag = "X";
             string winer = " ";
             ShowField(field);
+            var client = listen.Accept();
+            opponent = client;
+            
+           // Task.Run(() => NewClient(client));
+            
             do
             {
                 if (flag == "X")
                 {
+                    
                     Console.WriteLine();
                     Console.WriteLine("YOUR TURN [X] PLAYER, ENTER THE NUM OF CELL");
                     int cell_num = Convert.ToInt32(Console.ReadLine());
                     var data = Encoding.Unicode.GetBytes(Convert.ToString(cell_num));
+                   
                     opponent.Send(data);
+                    
+                    
                     UpdateField(cell_num, flag, field);
                     ShowField(field);
                     
@@ -43,12 +57,30 @@ namespace Server
                     {flag = "O";}
                     else
                     {winer = flag; }
+                    
                 }
+                
+                
+               
+              
+                
                 
                 if (flag == "O")
                 {
                     Console.WriteLine();
                     Console.WriteLine("YOUR TURN [O] PLAYER, ENTER THE NUM OF CELL");
+                    string message;
+                    var data1 = new byte[256];
+                    do
+                    {
+                        var bytes = client.Receive(data1);
+                        message = Encoding.Unicode.GetString(data1, 0, bytes);
+                    } while (client.Available > 0);
+                    var temp = "PLAYER [O] TURN IN CELL № - " + message ;
+                    Console.WriteLine(temp);
+                    global = Convert.ToInt32(message);
+                    
+                    
                     Console.ReadKey();
                     int cell_num = global;
                     UpdateField(cell_num, flag, field);
@@ -64,23 +96,9 @@ namespace Server
             Console.WriteLine();
             Console.WriteLine("ENDGAME");
             Console.WriteLine(flag + " - WINNER");
+            
         }
-        static void NewClient(Socket client)
-        {
-            string message;
-            var data = new byte[256];
-            while (true)
-            {
-                do
-                {
-                    var bytes = client.Receive(data);
-                    message = Encoding.Unicode.GetString(data, 0, bytes);
-                } while (client.Available > 0);
-                var temp = "PLAYER [O] TURN IN CELL № - " + message ;
-                Console.WriteLine(temp);
-                global = Convert.ToInt32(message);
-            }
-        }
+        
         static void ShowField(string[] field)
         {
             for (int i = 0; i < field.Length; i++)
@@ -106,15 +124,10 @@ namespace Server
                 }
             }
         }
-        static void MainTask(Socket listen)
-        {
-            while (true)
-            {
-                var client = listen.Accept();
-                opponent = client;
-                Task.Run(() => NewClient(client));
-            }
-        }
+      
+        
+        
+        
         static bool WinCondition(string symbol, string[] field)
         {
 
